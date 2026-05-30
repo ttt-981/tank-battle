@@ -244,6 +244,8 @@
       <span class="key-badge">P</span> 暂停
     </p>
     <button class="btn start" onclick="startGame()">⚔ 开始游戏</button>
+    <p style="color:#4fc3f7; font-size:13px; margin-top:15px; animation:blink 1.2s infinite;">按 方向键 或 空格 直接开始</p>
+    <style>@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}</style>
   </div>
 </div>
 
@@ -442,7 +444,7 @@ class Tank {
     this.dir = dir;
     this.color = color;
     this.isPlayer = isPlayer;
-    this.speed = isPlayer ? 3 : 0.8 + level * 0.2;
+    this.speed = isPlayer ? 5 : 0.8 + level * 0.2;
     this.size = TILE - 8;
     this.alive = true;
     this.shootCooldown = 0;
@@ -487,9 +489,24 @@ class Tank {
     if (!this.alive) return;
     const nx = this.x + DX[this.dir] * this.speed;
     const ny = this.y + DY[this.dir] * this.speed;
+
+    // 试试完全移动
     if (!this.collidesWith(nx, ny)) {
       this.x = nx;
       this.y = ny;
+      return;
+    }
+
+    // 如果完全移动被挡，尝试单轴滑动：(贴墙滑动)
+    // 试试仅 X 轴移动
+    if (DX[this.dir] !== 0 && !this.collidesWith(nx, this.y)) {
+      this.x = nx;
+      return;
+    }
+    // 试试仅 Y 轴移动
+    if (DY[this.dir] !== 0 && !this.collidesWith(this.x, ny)) {
+      this.y = ny;
+      return;
     }
   }
 
@@ -998,6 +1015,14 @@ function draw() {
 
 // ==================== 输入处理 ====================
 window.addEventListener('keydown', e => {
+  // 🔑 按任意方向键或空格直接开始游戏
+  if (!gameRunning && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) {
+    e.preventDefault();
+    startGame();
+    keys[e.code] = true;
+    return;
+  }
+
   keys[e.code] = true;
 
   if (e.code === 'KeyP') {
