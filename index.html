@@ -444,7 +444,7 @@ class Tank {
     this.dir = dir;
     this.color = color;
     this.isPlayer = isPlayer;
-    this.speed = isPlayer ? 5 : 0.8 + level * 0.2;
+    this.speed = isPlayer ? 4 : 0.8 + level * 0.2;
     this.size = TILE - 8;
     this.alive = true;
     this.shootCooldown = 0;
@@ -693,8 +693,10 @@ function rectCollide(a, b) {
 
 function getSpawnPos(isPlayer = false) {
   if (isPlayer) {
-    // 玩家出生在下方中央
-    return { x: W / 2, y: H - TILE * 2 };
+    // 玩家出生在下方中央，确保周围没有墙壁
+    const sx = Math.floor(W / 2 / TILE) * TILE + TILE / 2; // 对齐到格子中心
+    const sy = Math.floor((H - TILE * 2.5) / TILE) * TILE + TILE / 2;
+    return { x: sx, y: sy };
   }
 
   // 敌人出生在顶部三个位置之一
@@ -732,6 +734,20 @@ function spawnEnemy() {
 // ==================== 游戏流程 ====================
 function initLevel() {
   generateMap();
+
+  // 🔧 清理玩家出生点周围的墙壁，防止卡住
+  const spawnX = Math.floor(W / 2 / TILE);
+  const spawnY = Math.floor((H - TILE * 2.5) / TILE);
+  walls = walls.filter(w => {
+    const wc = Math.floor(w.x / TILE);
+    const wr = Math.floor(w.y / TILE);
+    // 在出生点周围 3x3 区域清除墙壁
+    if (Math.abs(wc - spawnX) <= 1 && Math.abs(wr - spawnY) <= 1) {
+      return false;
+    }
+    return true;
+  });
+
   enemies = [];
   bullets = [];
   effects = [];
